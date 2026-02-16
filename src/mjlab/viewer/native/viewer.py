@@ -209,6 +209,7 @@ class NativeMujocoViewer(BaseViewer):
             self.mjm, self.vd, self.vopt, self.pert, self.catmask, v.user_scn
           )
 
+      # small commit
       v.sync(state_only=True)
 
   def sync_viewer_to_env(self) -> None:

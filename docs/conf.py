@@ -131,7 +131,7 @@ html_theme_options = {
   "use_repository_button": True,
   "use_issues_button": True,
   "use_edit_page_button": True,
-  "show_toc_level": 1,
+  "show_toc_level": 2,
   "use_sidenotes": True,
   "logo": {
     "text": "The mjlab Documentation",
@@ -146,7 +146,13 @@ html_theme_options = {
     {
       "name": "mjlab",
       "url": "https://github.com/mujocolab/mjlab",
-      "icon": "https://img.shields.io/badge/mjlab-1.0.0-silver.svg",
+      "icon": "https://img.shields.io/badge/mjlab-1.1.0-silver.svg",
+      "type": "url",
+    },
+    {
+      "name": "Benchmarks",
+      "url": "https://mujocolab.github.io/mjlab/nightly/",
+      "icon": "https://img.shields.io/badge/Nightly-Benchmarks-blue",
       "type": "url",
     },
     {

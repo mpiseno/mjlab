@@ -34,7 +34,7 @@ class PlotCfg:
   p_hi: float = 98.0  # Percentile high.
   pad: float = 0.25  # Pad % of span on both sides.
   min_span: float = 1e-6  # Minimum vertical span.
-  init_yrange: tuple[float, float] = (-0.01, 0.01)  # Initial y-range.
+  init_yrange: tuple[float, float] = (0.0, 1.5)  # Initial y-range.
   grid_size: tuple[int, int] = (3, 4)  # Grid size (rows, columns).
   max_viewports: int = 12  # Cap number of plots shown.
   max_rows_per_col: int = 6  # Stack up to this many per column.
@@ -76,6 +76,12 @@ class NativeMujocoViewer(BaseViewer):
 
     self.env_idx = self.cfg.env_idx
     self._mj_lock = Lock()
+
+  def set_terms(self, terms: dict[str, Callable]) -> None:
+    """Set the reward terms to be plotted."""
+    self._terms = terms
+    self._term_names = list(terms.keys())
+    self._init_reward_plots(self._term_names)
 
   def setup(self) -> None:
     """Setup MuJoCo viewer resources."""
@@ -153,26 +159,26 @@ class NativeMujocoViewer(BaseViewer):
       # )
       # v.set_texts(overlay)
 
-      # if self._show_plots and self._term_names:
-      #   terms = list(
-      #     self.env.unwrapped.reward_manager.get_active_iterable_terms(self.env_idx)
-      #   )
-      #   if not self._is_paused:
-      #     for name, arr in terms:
-      #       if name in self._histories:
-      #         self._append_point(name, float(arr[0]))
-      #         self._write_history_to_figure(name)
+      if self._show_plots and self._term_names:
+        # terms = list(
+        #   self.env.unwrapped.reward_manager.get_active_iterable_terms(self.env_idx)
+        # )
+        if not self._is_paused:
+          for name, term_fn in self._terms.items():
+            if name in self._histories:
+              self._append_point(name, term_fn(self.env.unwrapped))
+              self._write_history_to_figure(name)
 
-      #   viewports = compute_viewports(len(self._term_names), v.viewport, self._plot_cfg)
-      #   viewport_figs = [
-      #     (viewports[i], self._figures[self._term_names[i]])
-      #     for i in range(
-      #       min(len(viewports), len(self._term_names), self._plot_cfg.max_viewports)
-      #     )
-      #   ]
-      #   v.set_figures(viewport_figs)
-      # else:
-      #   v.set_figures([])
+        viewports = compute_viewports(len(self._term_names), v.viewport, self._plot_cfg)
+        viewport_figs = [
+          (viewports[i], self._figures[self._term_names[i]])
+          for i in range(
+            min(len(viewports), len(self._term_names), self._plot_cfg.max_viewports)
+          )
+        ]
+        v.set_figures(viewport_figs)
+      else:
+        v.set_figures([])
 
       v.user_scn.ngeom = 0
       if self._show_debug_vis and hasattr(self.env.unwrapped, "update_visualizers"):
@@ -393,23 +399,23 @@ class NativeMujocoViewer(BaseViewer):
       fig.linedata[0][2 * i] = float(-i)
       fig.linedata[0][2 * i + 1] = float(hist[-1 - i])
 
-    # Autoscale y-axis.
-    if n >= 5:
-      data = np.fromiter(hist, dtype=float, count=n)
-      lo = float(np.percentile(data, self._plot_cfg.p_lo))
-      hi = float(np.percentile(data, self._plot_cfg.p_hi))
-      span = max(hi - lo, self._plot_cfg.min_span)
-      lo -= self._plot_cfg.pad * span
-      hi += self._plot_cfg.pad * span
-    elif n >= 1:
-      v = float(hist[-1])
-      span = max(abs(v), 1e-3)
-      lo, hi = v - span, v + span
-    else:
-      lo, hi = self._plot_cfg.init_yrange
+    # # Autoscale y-axis.
+    # if n >= 5:
+    #   data = np.fromiter(hist, dtype=float, count=n)
+    #   lo = float(np.percentile(data, self._plot_cfg.p_lo))
+    #   hi = float(np.percentile(data, self._plot_cfg.p_hi))
+    #   span = max(hi - lo, self._plot_cfg.min_span)
+    #   lo -= self._plot_cfg.pad * span
+    #   hi += self._plot_cfg.pad * span
+    # elif n >= 1:
+    #   v = float(hist[-1])
+    #   span = max(abs(v), 1e-3)
+    #   lo, hi = v - span, v + span
+    # else:
+    #   lo, hi = self._plot_cfg.init_yrange
 
-    fig.range[1][0] = float(lo)
-    fig.range[1][1] = float(hi)
+    # fig.range[1][0] = float(lo)
+    # fig.range[1][1] = float(hi)
 
 
 def compute_viewports(
